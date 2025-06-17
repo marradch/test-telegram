@@ -4,7 +4,6 @@ namespace App\Observers;
 
 use App\Models\Task;
 use DefStudio\Telegraph\Facades\Telegraph;
-use Illuminate\Support\Facades\Log;
 
 class TaskObserver
 {

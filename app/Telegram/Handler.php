@@ -70,14 +70,7 @@ class Handler extends WebhookHandler
 
         $telegramId = $this->message->from()->id();
 
-        $user = TelegramUser::firstOrCreate(
-            ['telegram_id' => $telegramId],
-            [
-                'username' => $this->message->from()->username(),
-                'first_name' => $this->message->from()->firstName(),
-                'last_name' => $this->message->from()->lastName(),
-            ]
-        );
+        $user = TelegramUser::where('telegram_id', $telegramId)->first();
 
         $task = $user->tasks()->create([
             'title' => $title,
@@ -137,13 +130,18 @@ class Handler extends WebhookHandler
                 $text .= "\n📎 [{$attachment->original_name}]($url)";
             }
 
+            $buttons = [
+                Button::make("✏️ Редактировать")->action("edittask")->param('id', $task->id),
+                Button::make("📎 Добавить файл")->action("addfile")->param('id', $task->id),
+            ];
+
+            if (!$task->completed) {
+                array_unshift($buttons, Button::make("✅ Завершить")->action("completetask")->param('id', $task->id)->param('t_id', $telegramId));
+            }
+
             $this->chat->message($text)
                 ->markdown()
-                ->keyboard(Keyboard::make()->buttons([
-                    Button::make("✅ Завершить")->action("completetask")->param('id', $task->id)->param('t_id', $telegramId),
-                    Button::make("✏️ Редактировать")->action("edittask")->param('id', $task->id),
-                    Button::make("📎 Добавить файл")->action("addfile")->param('id', $task->id),
-                ]))
+                ->keyboard(Keyboard::make()->buttons($buttons))
                 ->send();
         }
     }
