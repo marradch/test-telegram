@@ -1,0 +1,66 @@
+version: "3.8"
+services:
+
+  #PHP Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cloudsigma.com/php
+    container_name: app
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "5173:5173"
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www/html/
+    volumes:
+      - ./:/var/www/html/
+      - ./php/laravel.ini:/usr/local/etc/php/conf.d/laravel.ini
+    networks:
+      - app-network
+
+  #Nginx Service
+  webserver:
+    image: nginx:alpine
+    container_name: webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www/html/
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+
+  #MySQL Service
+  db:
+    image: postgres:13
+    container_name: db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: test_laravel
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+    volumes:
+      - dbdata:/var/lib/postgresql/data/
+      - ./postgresql/postgresql.conf:/etc/postgresql/postgresql.conf
+    networks:
+      - app-network
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
+
+#Volumes
+volumes:
+  dbdata:
+    driver: local
